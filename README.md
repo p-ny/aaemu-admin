@@ -11,7 +11,7 @@
 
 # AAEmu Global Admin Panel
 
-A comprehensive web-based administration panel for managing [AAEmu](https://github.com/AAEmu/AAEmu) game servers. Built with a modern React + Express stack, it provides a unified interface for server monitoring, player management, cash shop editing, mail delivery, and more — all behind a secure admin login.
+A web-based administration panel for managing [AAEmu](https://github.com/AAEmu/AAEmu) game servers. Built with a modern React + Express stack, it provides a unified interface for server monitoring, player management, cash shop editing, mail delivery, and more — all behind a secure admin login.
 
 Designed to run alongside your AAEmu game server, either as a Docker container on the same network or as a standalone Node.js application.
 
@@ -25,7 +25,7 @@ Designed to run alongside your AAEmu game server, either as a Docker container o
 | **Real-Time Dashboard** | Live server status, online player counts, player history charts (72h), and recent command activity feed. |
 | **Command Console** | Execute any AAEmu server command with a full searchable execution history. |
 | **Character Browser** | Browse online characters, search by name or account ID, view detailed character info. |
-| **Player Management** | Kick, ban/unban, mute/unmute, jail/unjail players. Teleport, give items, and set levels with confirmation dialogs. |
+| **Player Management** | Teleport, kick, give items and some more. |
 | **Expedition Browser** | View guilds/expeditions with member counts and online status. |
 | **Auction House** | Browse and search auction house listings across servers. |
 | **Mail System** | Send mail to individual characters, expeditions, families, online players, or everyone. Supports item attachments and gold. |
@@ -95,7 +95,7 @@ The easiest method. Works great with Portainer or any Docker host. The admin pan
 #### 1. Clone the repository
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/aaemu-admin.git
+git clone https://github.com/p-ny/aaemu-admin/aaemu-admin.git
 cd aaemu-admin
 ```
 
@@ -204,7 +204,7 @@ sudo -u postgres psql -c "CREATE DATABASE aaemu_admin OWNER aaemu;"
 #### 3. Clone and install
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/aaemu-admin.git
+git clone https://github.com/p-ny/aaemu-admin/aaemu-admin.git
 cd aaemu-admin
 npm install
 ```
