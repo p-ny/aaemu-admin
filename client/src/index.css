@@ -1,0 +1,95 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Rajdhani:wght@500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Gaming Dark Theme Palette */
+  --background: 240 10% 4%;       /* Almost black */
+  --foreground: 0 0% 98%;         /* White */
+  
+  --card: 240 10% 6%;             /* Slightly lighter than bg */
+  --card-foreground: 0 0% 98%;
+  
+  --popover: 240 10% 6%;
+  --popover-foreground: 0 0% 98%;
+  
+  --primary: 265 89% 66%;         /* Electric Purple */
+  --primary-foreground: 210 40% 98%;
+  
+  --secondary: 190 90% 50%;       /* Neon Cyan */
+  --secondary-foreground: 240 10% 4%;
+  
+  --muted: 240 6% 15%;
+  --muted-foreground: 240 5% 65%;
+  
+  --accent: 265 89% 66%;
+  --accent-foreground: 210 40% 98%;
+  
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 210 40% 98%;
+
+  --border: 240 6% 15%;
+  --input: 240 6% 15%;
+  --ring: 265 89% 66%;
+  
+  --radius: 0.5rem;
+  
+  --font-sans: 'Inter', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+  --font-display: 'Rajdhani', sans-serif;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground font-sans antialiased selection:bg-primary/30 selection:text-primary-foreground;
+    background-image: 
+      radial-gradient(circle at 50% 0%, hsl(var(--primary) / 0.15), transparent 40%),
+      radial-gradient(circle at 0% 100%, hsl(var(--secondary) / 0.1), transparent 40%);
+    background-attachment: fixed;
+  }
+  
+  /* Custom scrollbar for that tech feel */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    @apply bg-background;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-muted rounded-full hover:bg-muted-foreground/50 transition-colors;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-display);
+    @apply tracking-wide uppercase;
+  }
+}
+
+@layer components {
+  .glass-panel {
+    @apply bg-card/60 backdrop-blur-md border border-white/5 shadow-xl;
+  }
+  
+  .neon-border {
+    @apply border border-primary/50 shadow-[0_0_15px_rgba(139,92,246,0.3)];
+  }
+
+  .tech-button {
+    @apply relative overflow-hidden transition-all duration-300 active:scale-95;
+  }
+  
+  .tech-button::after {
+    content: '';
+    @apply absolute inset-0 bg-white/10 opacity-0 transition-opacity duration-300;
+  }
+  
+  .tech-button:hover::after {
+    @apply opacity-100;
+  }
+}

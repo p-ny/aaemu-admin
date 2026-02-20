@@ -1,0 +1,51 @@
+export const api = {
+  auth: {
+    login: { method: "POST" as const, path: "/api/auth/login" as const },
+    logout: { method: "POST" as const, path: "/api/auth/logout" as const },
+    check: { method: "GET" as const, path: "/api/auth/check" as const },
+    register: { method: "POST" as const, path: "/api/auth/register" as const },
+    changePassword: { method: "POST" as const, path: "/api/auth/change-password" as const },
+  },
+  users: {
+    list: { method: "GET" as const, path: "/api/users" as const },
+    delete: { method: "DELETE" as const, path: "/api/users/:id" as const },
+  },
+  servers: {
+    list: { method: "GET" as const, path: "/api/servers" as const },
+    create: { method: "POST" as const, path: "/api/servers" as const },
+    update: { method: "PUT" as const, path: "/api/servers/:id" as const },
+    delete: { method: "DELETE" as const, path: "/api/servers/:id" as const },
+    test: { method: "GET" as const, path: "/api/servers/:id/test" as const },
+    testMysql: { method: "GET" as const, path: "/api/servers/:id/test-mysql" as const },
+  },
+  aaemu: {
+    status: { method: "GET" as const, path: "/api/aaemu/status/:serverId" as const },
+    characters: { method: "GET" as const, path: "/api/aaemu/characters/:serverId" as const },
+    characterList: { method: "GET" as const, path: "/api/aaemu/character-list/:serverId" as const },
+    command: { method: "POST" as const, path: "/api/aaemu/command" as const },
+    expeditions: { method: "GET" as const, path: "/api/aaemu/expeditions/:serverId" as const },
+    auctionList: { method: "GET" as const, path: "/api/aaemu/auction/list/:serverId" as const },
+    auctionSearch: { method: "GET" as const, path: "/api/aaemu/auction/search/:serverId" as const },
+    auctionAdd: { method: "POST" as const, path: "/api/aaemu/auction/add" as const },
+    auctionGenerate: { method: "POST" as const, path: "/api/aaemu/auction/generate" as const },
+    mailSend: { method: "POST" as const, path: "/api/aaemu/mail/send" as const },
+    mailList: { method: "POST" as const, path: "/api/aaemu/mail/list" as const },
+    mailDelete: { method: "POST" as const, path: "/api/aaemu/mail/delete" as const },
+  },
+  history: {
+    list: { method: "GET" as const, path: "/api/history/:serverId" as const },
+  },
+  cashshop: {
+    skus: { method: "GET" as const, path: "/api/cashshop/skus/:serverId" as const },
+    items: { method: "GET" as const, path: "/api/cashshop/items/:serverId" as const },
+    menu: { method: "GET" as const, path: "/api/cashshop/menu/:serverId" as const },
+  },
+  compact: {
+    items: { method: "GET" as const, path: "/api/compact/items" as const },
+    item: { method: "GET" as const, path: "/api/compact/item/:id" as const },
+    icon: { method: "GET" as const, path: "/api/compact/icon/:id" as const },
+    tables: { method: "GET" as const, path: "/api/compact/tables" as const },
+    files: { method: "GET" as const, path: "/api/compact/files" as const },
+    upload: { method: "POST" as const, path: "/api/compact/upload" as const },
+  },
+};

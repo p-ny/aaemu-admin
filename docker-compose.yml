@@ -1,0 +1,49 @@
+services:
+  app:
+    build: .
+    container_name: aaemu-admin
+    restart: unless-stopped
+    ports:
+      - "${APP_PORT:-5000}:5000"
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://${POSTGRES_USER:-aaemu}:${POSTGRES_PASSWORD:-changeme}@admin-db:5432/${POSTGRES_DB:-aaemu_admin}
+      SESSION_SECRET: ${SESSION_SECRET:-change-this-to-a-random-string}
+      DEFAULT_ADMIN_PASSWORD: ${DEFAULT_ADMIN_PASSWORD:-changeme123}
+    volumes:
+      - uploads:/app/uploads
+      - data:/app/data
+    depends_on:
+      admin-db:
+        condition: service_healthy
+    networks:
+      - default
+      - aaemu_default
+
+  admin-db:
+    image: postgres:16-alpine
+    container_name: aaemu-admin-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-aaemu}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
+      POSTGRES_DB: ${POSTGRES_DB:-aaemu_admin}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-aaemu}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - default
+
+networks:
+  default:
+  aaemu_default:
+    external: true
+
+volumes:
+  pgdata:
+  uploads:
+  data:
