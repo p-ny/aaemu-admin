@@ -9,7 +9,7 @@
   <img src="https://img.shields.io/badge/License-GPL--3.0-blue?style=flat-square" alt="GPL-3.0 License"/>
 </p>
 
-# AAEmu Admin Panel / api-manager
+# AAEmu Admin Panel aka api-manager
 
 A web-based administration panel for managing [AAEmu](https://github.com/AAEmu/AAEmu) game servers. Built with a modern React + Express stack, it provides a unified interface for server monitoring, player management, cash shop editing, mail delivery, and more — all behind a secure admin login.
 
