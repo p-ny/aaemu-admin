@@ -37,9 +37,6 @@ Designed to run alongside your AAEmu game server, either as a Docker container o
 ---
 
 ```mermaid
----
-title: Architecture
----
 flowchart TD
     Panel["AAEmu Admin Panel"]
 
