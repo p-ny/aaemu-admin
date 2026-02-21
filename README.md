@@ -36,35 +36,49 @@ Designed to run alongside your AAEmu game server, either as a Docker container o
 
 ---
 
-## Architecture
+```mermaid
+---
+title: Architecture
+---
+flowchart TD
+    Panel["AAEmu Admin Panel"]
 
-```
-┌─────────────────────────────────────────────────────────┐
-│                   AAEmu Admin Panel                     │
-│                                                         │
-│  ┌──────────────┐      ┌──────────────────────────────┐ │
-│  │  React SPA   │◄────►│  Express API (port 5000)     │ │
-│  │  (Vite)      │      │                              │ │
-│  │  TailwindCSS │      │  ├─ Auth (bcrypt + sessions) │ │
-│  │  shadcn/ui   │      │  ├─ AAEmu Web API proxy      │ │
-│  │  wouter      │      │  ├─ MySQL client (ICS)       │ │
-│  └──────────────┘      │  └─ SQLite reader (items)    │ │
-│                        └──────────┬───────────────────┘ │
-│                                   │                     │
-└───────────────────────────────────┼─────────────────────┘
-                                    │
-            ┌───────────────────────┼────────────────────────┐
-            │                       │                        │
-    ┌───────▼───────┐   ┌──────────▼─────────┐    ┌─────────▼─────────┐
-    │  PostgreSQL   │   │  AAEmu Game Server │    │  AAEmu MySQL DB   │
-    │  (admin data) │   │  (Web API)         │    │  (ICS cash shop)  │
-    │               │   │                    │    │                   │
-    │  • users      │   │  • /api/status     │    │  • ics_skus       │
-    │  • servers    │   │  • /api/characters │    │  • ics_shop_items │
-    │  • sessions   │   │  • /api/commands/* │    │  • ics_menu       │
-    │  • cmd history│   │  • /api/mail/*     │    │                   │
-    │  • snapshots  │   │  • /api/auction/*  │    │                   │
-    └───────────────┘   └────────────────────┘    └───────────────────┘
+    React["React SPA (Vite)
+    - TailwindCSS
+    - shadcn/ui
+    - wouter"]
+
+    API["Express API (port 5000)
+    - Auth (bcrypt + sessions)
+    - AAEmu Web API proxy
+    - MySQL client (ICS)
+    - SQLite reader (items)"]
+
+    PostgreSQL["PostgreSQL (admin data)
+    - users
+    - servers
+    - sessions
+    - cmd history
+    - snapshots"]
+
+    Game["AAEmu Game Server (Web API)
+    - /api/status
+    - /api/characters
+    - /api/commands/*
+    - /api/mail/*
+    - /api/auction/*"]
+
+    MySQL["AAEmu MySQL DB (ICS cash shop)
+    - ics_skus
+    - ics_shop_items
+    - ics_menu"]
+
+    Panel <--> React
+    Panel <--> API
+    React <--> API
+    API --> PostgreSQL
+    API --> Game
+    API --> MySQL
 ```
 
 **PostgreSQL** stores the admin panel's own data: user accounts, server configurations, command history, player count snapshots, and sessions.
