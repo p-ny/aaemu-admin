@@ -39,7 +39,6 @@ export class GameServerMySQLClient {
   async getIcsSkus(): Promise<any[]> {
     const conn = await this.getConnection();
     try {
-      // Try to find if columns exist by selecting 1 row
       const [rows] = await conn.execute("SELECT * FROM ics_skus LIMIT 1");
       const data = rows as any[];
       if (data.length > 0) {
@@ -79,7 +78,6 @@ export class GameServerMySQLClient {
       const idCol = columns.includes('sku_id') ? 'sku_id' : 'id';
       
       const cleanData = { ...data };
-      // Map frontend fields to backend if needed
       if (columns.includes('item_id') && data.item_template_id !== undefined) {
         cleanData.item_id = data.item_template_id;
         delete cleanData.item_template_id;
@@ -160,7 +158,6 @@ export class GameServerMySQLClient {
       const idCol = columns.includes('shop_id') ? 'shop_id' : 'id';
 
       const cleanData = { ...data };
-      // Map display_order if needed, though usually it's correct or missing
       const fields = Object.keys(cleanData).filter(f => columns.includes(f));
       const setClause = fields.map(f => `\`${f}\` = ?`).join(", ");
       await conn.execute(`UPDATE ics_shop_items SET ${setClause} WHERE ${idCol} = ?`, [...fields.map(f => cleanData[f]), shopId]);

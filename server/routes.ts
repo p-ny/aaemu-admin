@@ -273,13 +273,15 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       const cmdArgs = inlineArgs || args || "";
       const charName = character || "";
 
-      const finalArgs = charName
-        ? (cmdArgs || charName)
-        : (cmdArgs || cmdName);
+      if (!charName) {
+        return res.status(400).json({ message: "A valid online character name is required to execute commands. Enter one in the character field." });
+      }
+
+      const finalArgs = cmdArgs || charName;
 
       const result = await client.executeCommand(cmdName, charName || "", finalArgs);
 
-      const loggedCommand = `${cmdName} ${cmdArgs}`.trim();
+      const loggedCommand = `${cmdName} ${cmdArgs || charName}`.trim();
 
       await storage.logCommand({
         serverId,

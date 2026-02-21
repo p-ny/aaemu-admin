@@ -4,7 +4,7 @@ import {
   Users, Search, Loader2, Ban, LogOut, VolumeX, Lock,
   MoreHorizontal, UserCog, MapPin, Package, ArrowUpCircle,
   Shield, ShieldOff, Volume2, Unlock, AlertTriangle, CheckCircle2,
-  XCircle, Eye
+  XCircle, Eye, Terminal
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -154,6 +154,7 @@ function ActionConfirmDialog({
   action,
   characterName,
   serverId,
+  executeAs,
   onSuccess,
 }: {
   open: boolean;
@@ -161,6 +162,7 @@ function ActionConfirmDialog({
   action: PlayerAction | null;
   characterName: string;
   serverId: number;
+  executeAs?: string;
   onSuccess: () => void;
 }) {
   const [reason, setReason] = useState("");
@@ -172,15 +174,21 @@ function ActionConfirmDialog({
   if (!action) return null;
 
   const handleExecute = async () => {
+    if (!executeAs) {
+      setResult({ success: false, message: "Select a character to execute as (dropdown at top of page)" });
+      return;
+    }
     setExecuting(true);
     setResult(null);
     try {
-      let cmdArgs = "";
+      const argParts: string[] = [characterName];
       if (action.needsArgs && args) {
-        cmdArgs = args;
-      } else if (action.needsReason && reason) {
-        cmdArgs = reason;
+        argParts.push(args);
       }
+      if (action.needsReason && reason) {
+        argParts.push(reason);
+      }
+      const cmdArgs = argParts.join(" ");
 
       const res = await fetch("/api/aaemu/command", {
         method: "POST",
@@ -188,8 +196,8 @@ function ActionConfirmDialog({
         body: JSON.stringify({
           serverId,
           command: action.command,
-          character: characterName,
-          arguments: cmdArgs || undefined,
+          character: executeAs,
+          arguments: cmdArgs,
         }),
       });
 
@@ -240,9 +248,17 @@ function ActionConfirmDialog({
         </AlertDialogHeader>
 
         <div className="space-y-3 py-2">
-          <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white/5 border border-white/10">
-            <UserCog className="w-4 h-4 text-muted-foreground" />
-            <span className="text-sm text-white font-mono">{characterName}</span>
+          <div className="space-y-1.5">
+            <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white/5 border border-white/10">
+              <UserCog className="w-4 h-4 text-muted-foreground" />
+              <span className="text-xs text-muted-foreground">Target:</span>
+              <span className="text-sm text-white font-mono">{characterName}</span>
+            </div>
+            <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-primary/5 border border-primary/20">
+              <Terminal className="w-4 h-4 text-primary/60" />
+              <span className="text-xs text-muted-foreground">Execute as:</span>
+              <span className="text-sm text-primary font-mono">{executeAs || <span className="text-red-400 italic">not selected</span>}</span>
+            </div>
           </div>
 
           {action.needsReason && (
@@ -452,10 +468,12 @@ function PlayerActionButtons({
   characterName,
   serverId,
   isOnline,
+  executeAs,
 }: {
   characterName: string;
   serverId: number;
   isOnline?: boolean;
+  executeAs?: string;
 }) {
   const [selectedAction, setSelectedAction] = useState<PlayerAction | null>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -534,6 +552,7 @@ function PlayerActionButtons({
         action={selectedAction}
         characterName={characterName}
         serverId={serverId}
+        executeAs={executeAs}
         onSuccess={handleSuccess}
       />
     </>
@@ -545,11 +564,13 @@ function CharacterTable({
   isLoading,
   serverId,
   showActions,
+  executeAs,
 }: {
   data: any[];
   isLoading: boolean;
   serverId: number | null;
   showActions?: boolean;
+  executeAs?: string;
 }) {
   const [selectedChar, setSelectedChar] = useState<any>(null);
   const [detailOpen, setDetailOpen] = useState(false);
@@ -646,6 +667,7 @@ function CharacterTable({
                       characterName={name}
                       serverId={serverId}
                       isOnline={isOnline}
+                      executeAs={executeAs}
                     />
                   </TableCell>
                 )}
@@ -670,6 +692,7 @@ function CharacterTable({
             action={actionFromDetail}
             characterName={getCharField(selectedChar, "Name", "name") || "Unknown"}
             serverId={serverId}
+            executeAs={executeAs}
             onSuccess={handleSuccess}
           />
         </>
@@ -681,6 +704,7 @@ function CharacterTable({
 export default function CharactersPage() {
   const { serverId } = useSelectedServer();
   const { data: onlineChars, isLoading: onlineLoading } = useLoggedCharacters(serverId);
+  const [executeAs, setExecuteAs] = useState("");
 
   const [searchName, setSearchName] = useState("");
   const [searchAccountId, setSearchAccountId] = useState("");
@@ -696,14 +720,31 @@ export default function CharactersPage() {
   };
 
   const onlineCount = onlineChars?.length ?? 0;
+  const charList: any[] = Array.isArray(onlineChars) ? onlineChars : [];
 
   return (
     <div className="space-y-8">
-      <div>
-        <h2 className="text-3xl font-bold font-display text-white">Characters</h2>
-        <p className="text-muted-foreground mt-1">
-          View online players, search characters, and manage player actions.
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-3xl font-bold font-display text-white">Characters</h2>
+          <p className="text-muted-foreground mt-1">
+            View online players, search characters, and manage player actions.
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <label className="text-xs font-mono text-muted-foreground uppercase whitespace-nowrap">Execute as:</label>
+          <select
+            value={executeAs}
+            onChange={(e) => setExecuteAs(e.target.value)}
+            className="bg-black/40 border border-white/10 rounded px-3 py-1.5 text-sm text-foreground w-56 focus:outline-none focus:border-primary/50 font-mono"
+          >
+            <option value="">Select character...</option>
+            {charList.map((char: any, i: number) => {
+              const name = getCharField(char, "Name", "name") || "Unknown";
+              return <option key={i} value={name}>{name}</option>;
+            })}
+          </select>
+        </div>
       </div>
 
       <Card className="bg-card/40 backdrop-blur-sm border-white/5 p-6">
@@ -724,7 +765,7 @@ export default function CharactersPage() {
             </div>
           )}
         </div>
-        <CharacterTable data={onlineChars ?? []} isLoading={onlineLoading} serverId={serverId} showActions />
+        <CharacterTable data={onlineChars ?? []} isLoading={onlineLoading} serverId={serverId} showActions executeAs={executeAs} />
       </Card>
 
       <Card className="bg-card/40 backdrop-blur-sm border-white/5 p-6">
@@ -768,7 +809,7 @@ export default function CharactersPage() {
           </Button>
         </div>
 
-        <CharacterTable data={searchResults ?? []} isLoading={searchLoading} serverId={serverId} showActions />
+        <CharacterTable data={searchResults ?? []} isLoading={searchLoading} serverId={serverId} showActions executeAs={executeAs} />
       </Card>
     </div>
   );
