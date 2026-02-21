@@ -208,11 +208,6 @@ sudo apt-get install -y python3 make g++
 sudo pacman -S nodejs npm postgresql python make gcc
 ```
 
-**macOS:**
-```bash
-brew install node@20 postgresql@16
-```
-
 #### 2. Set up PostgreSQL
 
 ```bash
