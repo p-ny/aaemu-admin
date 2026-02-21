@@ -37,45 +37,53 @@ Designed to run alongside your AAEmu game server, either as a Docker container o
 ---
 
 ```mermaid
+---
+title: Architecture
+---
 flowchart TD
     Panel["AAEmu Admin Panel"]
-
-    React["React SPA (Vite)
+    React["React SPA
+    (Vite)
+    
     - TailwindCSS
     - shadcn/ui
     - wouter"]
-
-    API["Express API (port 5000)
+    API["Express API
+    (port 5000)
+    
     - Auth (bcrypt + sessions)
     - AAEmu Web API proxy
     - MySQL client (ICS)
     - SQLite reader (items)"]
-
-    PostgreSQL["PostgreSQL (admin data)
+    PostgreSQL["PostgreSQL
+    (admin data)
+    
     - users
     - servers
     - sessions
     - cmd history
     - snapshots"]
-
-    Game["AAEmu Game Server (Web API)
+    Game["AAEmu Game Server
+    (Web API)
+    
     - /api/status
     - /api/characters
     - /api/commands/*
     - /api/mail/*
     - /api/auction/*"]
-
-    MySQL["AAEmu MySQL DB (ICS cash shop)
+    MySQL["AAEmu MySQL DB
+    (ICS cash shop)
+    
     - ics_skus
     - ics_shop_items
     - ics_menu"]
 
-    Panel <--> React
-    Panel <--> API
-    React <--> API
-    API --> PostgreSQL
-    API --> Game
-    API --> MySQL
+React <--> API
+API --> PostgreSQL
+API --> Game
+API --> MySQL
+Panel <--> React
+Panel <--> API
 ```
 
 **PostgreSQL** stores the admin panel's own data: user accounts, server configurations, command history, player count snapshots, and sessions.
