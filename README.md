@@ -55,15 +55,15 @@ Designed to run alongside your AAEmu game server, either as a Docker container o
                                     │
             ┌───────────────────────┼────────────────────────┐
             │                       │                        │
-    ┌───────▼───────┐   ┌──────────▼─────────┐   ┌─────────▼─────────┐
-    │  PostgreSQL   │   │  AAEmu Game Server  │   │  AAEmu MySQL DB   │
-    │  (admin data) │   │  (Web API)          │   │  (ICS cash shop)  │
-    │               │   │                     │   │                   │
-    │  • users      │   │  • /api/status      │   │  • ics_skus       │
-    │  • servers    │   │  • /api/characters  │   │  • ics_shop_items │
-    │  • sessions   │   │  • /api/commands/*  │   │  • ics_menu       │
-    │  • cmd history│   │  • /api/mail/*      │   │                   │
-    │  • snapshots  │   │  • /api/auction/*   │   │                   │
+    ┌───────▼───────┐   ┌──────────▼─────────┐    ┌─────────▼─────────┐
+    │  PostgreSQL   │   │  AAEmu Game Server │    │  AAEmu MySQL DB   │
+    │  (admin data) │   │  (Web API)         │    │  (ICS cash shop)  │
+    │               │   │                    │    │                   │
+    │  • users      │   │  • /api/status     │    │  • ics_skus       │
+    │  • servers    │   │  • /api/characters │    │  • ics_shop_items │
+    │  • sessions   │   │  • /api/commands/* │    │  • ics_menu       │
+    │  • cmd history│   │  • /api/mail/*     │    │                   │
+    │  • snapshots  │   │  • /api/auction/*  │    │                   │
     └───────────────┘   └────────────────────┘    └───────────────────┘
 ```
 
