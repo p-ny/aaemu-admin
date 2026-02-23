@@ -83,6 +83,11 @@ export class GameServerMySQLClient {
         delete cleanData.item_template_id;
       }
 
+      // Handle empty date strings for MySQL
+      if (cleanData.event_end_date === "") {
+        cleanData.event_end_date = null;
+      }
+
       const fields = Object.keys(cleanData).filter(f => columns.includes(f));
       const setClause = fields.map(f => `\`${f}\` = ?`).join(", ");
       await conn.execute(`UPDATE ics_skus SET ${setClause} WHERE ${idCol} = ?`, [...fields.map(f => cleanData[f]), skuId]);
@@ -104,6 +109,11 @@ export class GameServerMySQLClient {
       if (columns.includes('item_id') && data.item_template_id !== undefined) {
         cleanData.item_id = data.item_template_id;
         delete cleanData.item_template_id;
+      }
+
+      // Handle empty date strings for MySQL
+      if (cleanData.event_end_date === "") {
+        cleanData.event_end_date = null;
       }
 
       const fields = Object.keys(cleanData).filter(f => columns.includes(f));

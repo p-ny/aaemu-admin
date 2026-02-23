@@ -104,6 +104,37 @@ function useCompactFiles() {
   });
 }
 
+function useCompactItem(itemId: number, filename?: string) {
+  return useQuery({
+    queryKey: ["/api/compact/item", itemId, filename],
+    queryFn: async () => {
+      const qs = filename ? `?filename=${filename}` : "";
+      const res = await fetch(`/api/compact/item/${itemId}${qs}`);
+      if (!res.ok) return null;
+      return res.json();
+    },
+    enabled: itemId > 0,
+    staleTime: 60 * 60 * 1000, // cache for 1 hour - item data doesn't change
+  });
+}
+
+function CompactItemIcon({ itemId, className }: { itemId: number; className?: string }) {
+  const { data: item } = useCompactItem(itemId);
+  const src = item?.icon_filename
+    ? `/icons/${item.icon_filename}.png`
+    : item?.icon_id
+    ? `/icons/icon_item_${String(item.icon_id).padStart(4, "0")}.png`
+    : null;
+  if (!src) return null;
+  return (
+    <img
+      src={src}
+      className={className}
+      onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+    />
+  );
+}
+
 function SkuEditor({ serverId }: { serverId: number }) {
   const queryClient = useQueryClient();
   const { data: skus, isLoading } = useIcsSkus(serverId);
@@ -237,7 +268,11 @@ function SkuEditor({ serverId }: { serverId: number }) {
                       <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => openEdit(row)}>
                         <Pencil className="w-3 h-3" />
                       </Button>
-                      <Button size="icon" variant="ghost" className="h-7 w-7 text-red-400" onClick={() => deleteMutation.mutate(row.sku_id)}>
+                      <Button size="icon" variant="ghost" className="h-7 w-7 text-red-400" onClick={() => {
+                        if (confirm("Are you sure? AAEmu guidelines advise against deleting SKUs to maintain log integrity.")) {
+                          deleteMutation.mutate(row.sku_id);
+                        }
+                      }}>
                         <Trash2 className="w-3 h-3" />
                       </Button>
                     </div>
@@ -488,7 +523,11 @@ function ShopItemEditor({ serverId }: { serverId: number }) {
                       <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => openEdit(row)}>
                         <Pencil className="w-3 h-3" />
                       </Button>
-                      <Button size="icon" variant="ghost" className="h-7 w-7 text-red-400" onClick={() => deleteMutation.mutate(row.shop_id)}>
+                      <Button size="icon" variant="ghost" className="h-7 w-7 text-red-400" onClick={() => {
+                        if (confirm("Are you sure? AAEmu guidelines advise against deleting Shop Items to maintain log integrity.")) {
+                          deleteMutation.mutate(row.shop_id);
+                        }
+                      }}>
                         <Trash2 className="w-3 h-3" />
                       </Button>
                     </div>
@@ -884,9 +923,9 @@ function ItemBrowser() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
           {items?.map((item: any) => (
             <div key={item.id} className="bg-card/40 border border-white/5 rounded-lg p-3 flex gap-3 items-start">
-              {item.icon_id && (
+              {(item.icon_filename || item.icon_id) && (
                 <img
-                  src={`/api/compact/icon/${item.icon_id}${selectedFile ? `?filename=${selectedFile}` : ""}`}
+                  src={item.icon_filename ? `/icons/${item.icon_filename}.png` : `/icons/icon_item_${String(item.icon_id).padStart(4, "0")}.png`}
                   alt=""
                   className="w-10 h-10 rounded border border-white/10 bg-black/20"
                   onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
@@ -914,6 +953,119 @@ function ItemBrowser() {
   );
 }
 
+import shopBg from "@/assets/images/shop-bg.png";
+
+function ShopPreview({ serverId }: { serverId: number }) {
+  const { data: menu } = useIcsMenu(serverId);
+  const { data: items } = useIcsItems(serverId);
+  const { data: skus } = useIcsSkus(serverId);
+  const [activeTab, setActiveTab] = useState<number | null>(null);
+
+  const displayItems = items?.filter(item => {
+    if (activeTab === null) return true;
+    return item.category === activeTab;
+  }) || [];
+
+  return (
+    <div className="relative w-full aspect-[16/9] rounded-xl overflow-hidden border border-white/10 shadow-2xl bg-black mb-8">
+      <img src={shopBg} className="absolute inset-0 w-full h-full object-cover opacity-40" alt="Shop Background" />
+      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/20 to-black/80" />
+      
+      <div className="relative h-full flex flex-col p-6">
+        <div className="flex justify-between items-center mb-6">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center border border-primary/50 shadow-[0_0_15px_rgba(var(--primary),0.5)]">
+              <ShoppingCart className="w-5 h-5 text-primary" />
+            </div>
+            <h2 className="text-2xl font-bold text-white tracking-tight drop-shadow-md">Marketplace</h2>
+          </div>
+          <div className="flex gap-4">
+            <div className="px-4 py-1.5 rounded-full bg-black/60 border border-white/10 flex items-center gap-2 backdrop-blur-sm">
+              <span className="text-amber-400 font-bold">1,250</span>
+              <span className="text-[10px] text-muted-foreground uppercase font-mono">Credits</span>
+            </div>
+            <div className="px-4 py-1.5 rounded-full bg-black/60 border border-white/10 flex items-center gap-2 backdrop-blur-sm">
+              <span className="text-blue-400 font-bold">450</span>
+              <span className="text-[10px] text-muted-foreground uppercase font-mono">Loyalty</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex flex-1 gap-6 min-h-0">
+          <div className="w-48 flex flex-col gap-1 overflow-y-auto pr-2 custom-scrollbar">
+            <button
+              onClick={() => setActiveTab(null)}
+              className={`w-full text-left px-4 py-2.5 rounded-lg text-sm transition-all duration-200 border border-transparent ${
+                activeTab === null 
+                  ? "bg-primary/20 text-primary border-primary/30 shadow-[inset_0_0_10px_rgba(var(--primary),0.1)] font-semibold" 
+                  : "text-muted-foreground hover:bg-white/5 hover:text-white"
+              }`}
+            >
+              All Items
+            </button>
+            {menu?.map((m: any) => (
+              <button
+                key={m.id}
+                onClick={() => setActiveTab(m.id)}
+                className={`w-full text-left px-4 py-2.5 rounded-lg text-sm transition-all duration-200 border border-transparent ${
+                  activeTab === m.id 
+                    ? "bg-primary/20 text-primary border-primary/30 shadow-[inset_0_0_10px_rgba(var(--primary),0.1)] font-semibold" 
+                    : "text-muted-foreground hover:bg-white/5 hover:text-white"
+                }`}
+              >
+                {m.name || m.tab_name}
+              </button>
+            ))}
+          </div>
+
+          <div className="flex-1 grid grid-cols-3 xl:grid-cols-4 gap-4 overflow-y-auto pr-2 custom-scrollbar content-start">
+            {displayItems.map((item: any) => {
+              // SKUs link to items via shop_id, pick the default one (is_default=1) or first
+              const itemSkus = skus?.filter(s => s.shop_id === item.shop_id) || [];
+              const sku = itemSkus.find(s => s.is_default === 1) || itemSkus[0];
+              const itemId = sku?.item_template_id || sku?.item_id || 0;
+              return (
+                <div key={item.shop_id} className="group relative bg-black/40 backdrop-blur-md border border-white/10 rounded-xl p-4 flex flex-col gap-3 transition-all duration-300 hover:border-primary/40 hover:bg-black/60 hover:shadow-[0_0_20px_rgba(0,0,0,0.5)]">
+                  <div className="aspect-square rounded-lg bg-gradient-to-br from-white/10 to-transparent flex items-center justify-center relative overflow-hidden">
+                    {itemId > 0 && (
+                      <CompactItemIcon itemId={itemId} className="w-16 h-16 object-contain drop-shadow-[0_0_8px_rgba(255,255,255,0.3)] group-hover:scale-110 transition-transform duration-300" />
+                    )}
+                    {item.is_new ? (
+                      <div className="absolute top-2 left-2 px-1.5 py-0.5 rounded bg-green-500 text-[10px] font-bold text-white uppercase tracking-tighter shadow-lg">New</div>
+                    ) : null}
+                    {item.is_sale ? (
+                      <div className="absolute top-2 right-2 px-1.5 py-0.5 rounded bg-amber-500 text-[10px] font-bold text-white uppercase tracking-tighter shadow-lg">Sale</div>
+                    ) : null}
+                  </div>
+                  
+                  <div className="flex flex-col gap-1 min-w-0">
+                    <h4 className="text-sm font-semibold text-white truncate group-hover:text-primary transition-colors">
+                      Item #{itemId || "???"}
+                    </h4>
+                    <div className="flex items-center justify-between mt-1">
+                      <div className="flex flex-col">
+                        {sku?.discount_price > 0 && (
+                          <span className="text-[10px] text-muted-foreground line-through opacity-60">{sku.price}</span>
+                        )}
+                        <span className={`text-lg font-bold ${sku?.currency === 1 ? "text-blue-400" : "text-amber-400"}`}>
+                          {sku?.discount_price > 0 ? sku.discount_price : (sku?.price || 0)}
+                        </span>
+                      </div>
+                      <Button size="sm" className="h-8 px-3 rounded-lg bg-primary/10 text-primary border border-primary/20 hover:bg-primary hover:text-white transition-all shadow-sm">
+                        Buy
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function CashShopPage() {
   const { serverId } = useSelectedServer();
 
@@ -925,6 +1077,22 @@ export default function CashShopPage() {
           Manage in-game cash shop (ICS) items, SKUs, and menu categories via MySQL. Browse item data from compact.sqlite3 files.
         </p>
       </div>
+
+      <section className="space-y-4">
+        <h2 className="text-xl font-bold text-white flex items-center gap-2">
+          <LayoutGrid className="w-5 h-5 text-primary" /> In-Game Preview
+        </h2>
+        {serverId ? (
+          <ShopPreview serverId={serverId} />
+        ) : (
+          <div className="w-full aspect-[16/9] rounded-xl border border-white/10 bg-black/40 flex flex-col items-center justify-center text-muted-foreground">
+            <ShoppingCart className="w-12 h-12 mb-4 opacity-20" />
+            <p>Select a server to see preview</p>
+          </div>
+        )}
+      </section>
+
+      <Separator className="bg-white/5 my-8" />
 
       <Tabs defaultValue="skus" className="space-y-6">
         <TabsList className="bg-card/40 border border-white/5">

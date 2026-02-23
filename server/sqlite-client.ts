@@ -48,47 +48,88 @@ export function getItemsFromCompact(
     const tableName = getItemTableName(db);
     if (!tableName) return { items: [], total: 0 };
 
+    const tables = db.prepare("SELECT name FROM sqlite_master WHERE type='table'").all() as any[];
+    const tableNames = tables.map(t => t.name.toLowerCase());
+    const hasLocalized = tableNames.includes("localized_texts");
+
     const columns = db.prepare(`PRAGMA table_info(${tableName})`).all() as any[];
     const colNames = columns.map((c: any) => c.name.toLowerCase());
 
-    const selectCols: string[] = ["id"];
-    if (colNames.includes("name")) selectCols.push("name");
-    if (colNames.includes("icon_id")) selectCols.push("icon_id");
-    if (colNames.includes("category_id")) selectCols.push("category_id");
-    if (colNames.includes("level")) selectCols.push("level");
-    if (colNames.includes("description")) selectCols.push("description");
-    if (colNames.includes("price")) selectCols.push("price");
-    if (colNames.includes("refund")) selectCols.push("refund");
-    if (colNames.includes("max_stack_size")) selectCols.push("max_stack_size");
-    if (colNames.includes("fixed_grade")) selectCols.push("fixed_grade");
-    if (colNames.includes("level_requirement")) selectCols.push("level_requirement");
-    if (colNames.includes("bind_id")) selectCols.push("bind_id");
-    if (colNames.includes("sellable")) selectCols.push("sellable");
+    const hasIconsTable = tableNames.includes("icons");
+    let selectCols: string[] = [`t.id`];
+    if (colNames.includes("name")) selectCols.push(`t.name`);
+    if (colNames.includes("icon_id")) selectCols.push(`t.icon_id`);
+    if (colNames.includes("description")) selectCols.push(`t.description`);
+    if (hasIconsTable && colNames.includes("icon_id")) selectCols.push(`ic.filename as icon_filename`);
 
-    let countQuery = `SELECT COUNT(*) as total FROM ${tableName}`;
-    let dataQuery = `SELECT ${selectCols.join(", ")} FROM ${tableName}`;
+    // If localized_texts exists, we'll try to join it for English names
+    let query = "";
+    let countQuery = "";
     const params: any[] = [];
 
-    if (search) {
-      const hasName = colNames.includes("name");
-      if (hasName) {
-        countQuery += " WHERE name LIKE ? OR CAST(id AS TEXT) LIKE ?";
-        dataQuery += " WHERE name LIKE ? OR CAST(id AS TEXT) LIKE ?";
-        params.push(`%${search}%`, `%${search}%`);
+    if (hasLocalized) {
+      // localized_texts uses per-language columns (e.g. en_us), joined on idx
+      const localizedCols = db.prepare("PRAGMA table_info(localized_texts)").all() as any[];
+      const localizedColNames = localizedCols.map((c: any) => c.name.toLowerCase());
+      const enCol = localizedColNames.includes("en_us") ? "en_us" : (localizedColNames.includes("en") ? "en" : null);
+
+      const iconJoin = hasIconsTable && colNames.includes("icon_id") ? ` LEFT JOIN icons ic ON t.icon_id = ic.id` : "";
+      if (enCol) {
+        selectCols.push(`l.${enCol} as localized_name`);
+        query = `SELECT ${selectCols.join(", ")} FROM ${tableName} t LEFT JOIN localized_texts l ON t.id = l.idx${iconJoin}`;
+        countQuery = `SELECT COUNT(*) as total FROM ${tableName} t LEFT JOIN localized_texts l ON t.id = l.idx${iconJoin}`;
       } else {
-        countQuery += " WHERE CAST(id AS TEXT) LIKE ?";
-        dataQuery += " WHERE CAST(id AS TEXT) LIKE ?";
-        params.push(`%${search}%`);
+        query = `SELECT ${selectCols.join(", ")} FROM ${tableName} t${iconJoin}`;
+        countQuery = `SELECT COUNT(*) as total FROM ${tableName} t${iconJoin}`;
       }
+    } else {
+      const iconJoin = hasIconsTable && colNames.includes("icon_id") ? ` LEFT JOIN icons ic ON t.icon_id = ic.id` : "";
+      query = `SELECT ${selectCols.join(", ")} FROM ${tableName} t${iconJoin}`;
+      countQuery = `SELECT COUNT(*) as total FROM ${tableName} t${iconJoin}`;
     }
 
-    dataQuery += " ORDER BY id LIMIT ? OFFSET ?";
+    // Re-check whether localized join was actually set up
+    const hasLocalizedJoin = hasLocalized && query.includes("LEFT JOIN localized_texts");
+    // Get the en column name used above (if any) for search
+    let enSearchCol: string | null = null;
+    if (hasLocalizedJoin) {
+      const localizedCols2 = db.prepare("PRAGMA table_info(localized_texts)").all() as any[];
+      const lc = localizedCols2.map((c: any) => c.name.toLowerCase());
+      enSearchCol = lc.includes("en_us") ? "en_us" : (lc.includes("en") ? "en" : null);
+    }
 
-    const countResult = db.prepare(countQuery).get(...params) as any;
-    const total = countResult?.total || 0;
+    if (search) {
+      const searchTerms = [`CAST(t.id AS TEXT) LIKE ?`];
+      params.push(`%${search}%`);
+      
+      if (colNames.includes("name")) {
+        searchTerms.push(`t.name LIKE ?`);
+        params.push(`%${search}%`);
+      }
+      if (hasLocalizedJoin && enSearchCol) {
+        searchTerms.push(`l.${enSearchCol} LIKE ?`);
+        params.push(`%${search}%`);
+      }
+      
+      const where = ` WHERE ${searchTerms.join(" OR ")}`;
+      query += where;
+      countQuery += where;
+    }
 
-    const items = db.prepare(dataQuery).all(...params, limit, offset);
-    return { items, total };
+    const totalResult = db.prepare(countQuery).get(...params) as any;
+    const total = totalResult?.total || 0;
+
+    query += " ORDER BY t.id LIMIT ? OFFSET ?";
+    const items = db.prepare(query).all(...params, limit, offset);
+
+    // Map localized name and clean up icon filename
+    const mappedItems = items.map((item: any) => ({
+      ...item,
+      name: item.localized_name || item.name || `Item ${item.id}`,
+      icon_filename: item.icon_filename ? item.icon_filename.replace(/\.dds$/i, "") : null
+    }));
+
+    return { items: mappedItems, total };
   } catch (e: any) {
     console.error("SQLite query error:", e.message);
     return { items: [], total: 0 };
@@ -104,8 +145,22 @@ export function getItemById(itemId: number, filename?: string): any | null {
   try {
     const tableName = getItemTableName(db);
     if (!tableName) return null;
-    const item = db.prepare(`SELECT * FROM ${tableName} WHERE id = ?`).get(itemId);
-    return item || null;
+
+    const tables = db.prepare("SELECT name FROM sqlite_master WHERE type='table'").all() as any[];
+    const tableNames = tables.map((t: any) => t.name.toLowerCase());
+    const hasIcons = tableNames.includes("icons");
+
+    let query: string;
+    if (hasIcons) {
+      query = `SELECT t.*, ic.filename as icon_filename FROM ${tableName} t LEFT JOIN icons ic ON t.icon_id = ic.id WHERE t.id = ?`;
+    } else {
+      query = `SELECT * FROM ${tableName} t WHERE t.id = ?`;
+    }
+
+    const item = db.prepare(query).get(itemId) as any;
+    if (!item) return null;
+    if (item.icon_filename) item.icon_filename = item.icon_filename.replace(/\.dds$/i, "");
+    return item;
   } catch {
     return null;
   } finally {
