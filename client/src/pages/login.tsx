@@ -42,7 +42,7 @@ export default function LoginPage() {
             SYSTEM ACCESS
           </h1>
           <p className="text-sm text-muted-foreground mt-2 font-mono uppercase tracking-widest">
-            AAEmu Panel
+            Restricted Environment
           </p>
         </CardHeader>
 
