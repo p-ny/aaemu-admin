@@ -131,6 +131,7 @@ Edit `.env` with your settings:
 POSTGRES_USER=aaemu
 POSTGRES_PASSWORD=your-secure-password
 POSTGRES_DB=aaemu_admin
+#DATABASE_URL=postgresql://aaemu:changeme@admin-db:5432/aaemu_admin
 
 # Application
 APP_PORT=5000
